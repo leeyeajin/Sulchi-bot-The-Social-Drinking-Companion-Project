@@ -1,0 +1,125 @@
+#include <Servo.h>
+
+// 초음파 센서 핀 정의
+const int trigPin = 2;
+const int echoPin = 3;
+
+// MG996R서보 모터 핀 정의
+const int servoPin1 = 5;    //오른쪽
+//const int servoPin2 = 6;    //왼쪽
+
+//SG-90 서보 모터 핀 정의
+const int servoPin3 = 9;    //오른쪽
+//const int servoPin4 = 10;   //왼쪽
+
+Servo servo1;
+//Servo servo2;
+Servo servo3;
+//Servo servo4;
+
+// 붉은색 LED 핀 정의(하나의 신호선에 LED 2개 연결)
+const int redLedPin1 = 11;
+
+// 흰색 LED 핀 정의(하나의 신호선에 LED 2개 연결)
+const int whiteLedPin1 = 13;
+
+// 작동 횟수 카운트 변수
+int count = 0;
+int flag = 0;
+void setup() {
+  delay(5000);
+  // 시리얼 통신 시작
+  Serial.begin(9600);
+
+  // 초음파 센서 핀 모드 설정
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  // MG996R서보 모터 핀 모드 설정
+  servo1.attach(servoPin1);
+ // servo2.attach(servoPin2);
+  //SG-90 서보 모터 핀 모드 설정
+  servo3.attach(servoPin3);
+  //servo4.attach(servoPin4);
+
+  // 붉은색 LED 핀 모드 설정
+  pinMode(redLedPin1, OUTPUT);
+
+  // 흰색 LED 핀 모드 설정
+  pinMode(whiteLedPin1, OUTPUT);
+
+  servo1.write(125);   // MG996R 서보 모터(오른쪽) 초기 각도 125도로 설정
+  
+
+  servo3.write(90);   // SG-90 서보 모터(오른쪽) 초기 각도 80도로 설정
+ 
+
+  digitalWrite(whiteLedPin1, HIGH);   //전원이 들어오면 흰색 LED ON
+}
+
+  
+
+void loop() {
+  // 초음파 센서로 거리 측정
+  long duration, distance;
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  duration = pulseIn(echoPin, HIGH);
+  distance = duration * 0.034 / 2;
+
+  Serial.print("\nDistance: ");
+  Serial.print(distance);
+  delay(100);
+  //digitalWrite(whiteLedPin1, HIGH);
+
+  // 거리가 20cm 이하인 경우 작동
+  if (distance <= 20) {
+    flag += 1;
+    // 작동 횟수 증가
+    
+    if(flag == 1){
+      delay(5000);
+    }
+    if (count < 8 && flag == 2) {
+
+    // 1.5초 후에 MG996R 서보 모터 2개 동시 작동
+    delay(1500);
+    servo1.write(70);  // MG996R 서보 모터(오른쪽)을 70도 위치로 이동 (마시는 동작)
+
+    delay(2000);
+    servo3.write(50);  // SG-90 서보 모터(오른쪽)을 40도 위치로 이동 (마시는 동작)
+
+    delay(2500);
+    servo3.write(90);  // SG-90 서보 모터(오른쪽)을 원위치로 이동
+    
+
+    delay(3000);
+    servo1.write(125);  // MG996R 서보 모터(오른쪽)을 원위치로 이동
+    delay(500);
+    count += 1;
+    flag = 0;
+    }
+
+    
+
+    // 붉은색 LED 밝기 조절
+    int brightness = count * 31;  // 8회: 248
+    analogWrite(redLedPin1, brightness);
+
+    // 7회 작동 후 흰색, 붉은색 LED 끄기
+    if (count >= 7) {
+      digitalWrite(whiteLedPin1, LOW);
+      analogWrite(redLedPin1, 0);
+    }
+     // 거리 출력
+  
+  }
+}
+  
+  //최초 9V 배터리를 배럴잭으로 아두이노에 연결했을때 동작이 1회 수행됨. 
+  //따라서 7회 동작 후 LED가 꺼지려면 count = 8일때 LED를 끔
+
+ 
